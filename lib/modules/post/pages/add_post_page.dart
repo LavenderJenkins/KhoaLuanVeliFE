@@ -10,9 +10,11 @@ import 'package:veli_flutter/helpers/navigator_helper.dart';
 import 'package:veli_flutter/models/school_model.dart';
 import 'package:veli_flutter/models/subject_model.dart';
 import 'package:veli_flutter/models/user_model.dart';
+import 'package:veli_flutter/modules/tflite/widgets/image_classification.dart';
 import 'package:veli_flutter/services/local_storage_service.dart';
 import 'package:veli_flutter/utils/app_color.dart';
 import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:veli_flutter/widgets/loading.dart';
@@ -28,6 +30,7 @@ class AddPostPage extends StatefulWidget {
 }
 
 class _AddPostPageState extends State<AddPostPage> {
+  ImageClassification? imageClassificationHelper;
   LocalStorageService localStorage = LocalStorageService();
   bool isLoading = false;
 
@@ -116,6 +119,37 @@ class _AddPostPageState extends State<AddPostPage> {
     }
   }
 
+  bool _isValidImage(Map<String, double>? classification) {
+    if (classification == null) return false;
+
+    const String validLabel =
+        "0 document"; 
+    return classification.containsKey(validLabel) &&
+        classification[validLabel]! > 0.5; // Threshold can be adjusted
+  }
+
+  Future<bool> validateAndProcessImages() async {
+    if (_pickedImages == null) {
+      Fluttertoast.showToast(msg: "No images selected");
+      return false;
+    }
+
+    for (var image in _pickedImages!) {
+      var imgFile = File(image.path);
+      var imgData = img.decodeImage(imgFile.readAsBytesSync());
+
+      var classification =
+          await imageClassificationHelper?.inferenceImage(imgData!);
+    setState(() {});
+
+      if (!_isValidImage(classification)) {
+        Fluttertoast.showToast(msg: "Hình ảnh không hợp lệ, vui lòng thử lại!");
+        return false;
+      }
+    }
+    return true;
+  }
+
   Future<void> createDocument() async {
     try {
       UserModel? user = await localStorage.getUserInfo();
@@ -188,8 +222,13 @@ class _AddPostPageState extends State<AddPostPage> {
     }
   }
 
+  void _initializeImageClassification() {
+    imageClassificationHelper = ImageClassification()..initHelper();
+  }
+
   @override
   void initState() {
+    _initializeImageClassification();
     getUser();
     getSchoolList();
     getSubjectList();
@@ -199,23 +238,22 @@ class _AddPostPageState extends State<AddPostPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF9F9F9),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            navigatorHelper.popView(context, {});
-          },
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFF9F9F9),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () {
+              navigatorHelper.popView(context, {});
+            },
+          ),
         ),
-      ),
-      backgroundColor: const Color(0xFFF9F9F9),
-      body: isLoading
-          ? Stack(
-              children: [buildBody(context),LoadingWidget()],
-            )
-          : buildBody(context)
-    );
+        backgroundColor: const Color(0xFFF9F9F9),
+        body: isLoading
+            ? Stack(
+                children: [buildBody(context), LoadingWidget()],
+              )
+            : buildBody(context));
   }
 
   SingleChildScrollView buildBody(BuildContext context) {
@@ -434,18 +472,18 @@ class _AddPostPageState extends State<AddPostPage> {
               setState(() {
                 isLoading = true;
               });
-
-              // Timer(Duration(seconds: 5), () {
-              //   setState(() {
-              //     isLoading = false;
-              //   });
-              // });
-              Future.delayed(Duration.zero, () {
-                createDocument().then((result) {
-                  setState(() {
-                    isLoading = false;
+              bool isValid = await validateAndProcessImages();
+              if (isValid) {
+                Future.delayed(Duration.zero, () {
+                  createDocument().then((result) {
+                    setState(() {
+                      isLoading = false;
+                    });
                   });
                 });
+              }
+              setState(() {
+                isLoading = false;
               });
             },
           ),

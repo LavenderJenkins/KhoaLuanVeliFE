@@ -1,16 +1,17 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:veli_flutter/constants/common.constanst.dart';
 import 'package:veli_flutter/helpers/navigator_helper.dart';
 import 'package:veli_flutter/models/user_model.dart';
 import 'package:veli_flutter/modules/auth/pages/forgot_password_page.dart';
+import 'package:veli_flutter/pages/home_page.dart';
 import 'package:veli_flutter/routes/route_config.dart';
-// import 'package:veli_flutter/routes/route_config.dart' as customRouter;
 import 'package:veli_flutter/services/local_storage_service.dart';
 import 'package:veli_flutter/utils/app_color.dart';
+import 'package:veli_flutter/widgets/navbar.dart';
 
 import '../widgets/auth_action_button.dart';
 import '../widgets/auth_form_text_field.dart';
@@ -25,16 +26,79 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  TextEditingController phoneNumber = TextEditingController(text: '');
-
-  TextEditingController password = TextEditingController(text: '');
+  TextEditingController phoneNumberController = TextEditingController(text: '');
+  TextEditingController passwordController = TextEditingController(text: '');
   LocalStorageService localStorage = LocalStorageService();
+  bool _isPasswordHidden = true;
 
-  bool _isObscure = true;
+  @override
+  void initState() {
+    super.initState();
+    checkLoginStatus();
+  }
+
+  void checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    if (isLoggedIn) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => MainPage()),
+      );
+    }
+  }
+
   void _togglePasswordVisibility() {
     setState(() {
-      _isObscure = !_isObscure;
+      _isPasswordHidden = !_isPasswordHidden;
     });
+  }
+
+  Future<bool> login(String phoneNumber, String password) async {
+    try {
+      final response =
+          await http.post(Uri.parse('$apiHost/api/auth/login'), body: {
+        'phone': phoneNumber,
+        'password': password,
+      });
+
+      if (response.statusCode == 200) {
+        final userJson = jsonDecode(response.body)["data"];
+        final user = UserModel.fromJson(userJson);
+        await localStorage.setUserInfo(user);
+
+        Fluttertoast.showToast(
+          msg: "Đăng nhập thành công",
+        );
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setBool('isLoggedIn', true);
+
+        return true;
+      } else {
+        Fluttertoast.showToast(
+          msg: jsonDecode(response.body)["message"],
+        );
+        return false;
+      }
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
+  void onPressedLogin() async {
+    print(phoneNumberController.text);
+    print(passwordController.text);
+
+    bool loginResult =
+        await login(phoneNumberController.text, passwordController.text);
+    if (loginResult) {
+      navigatorHelper.changeView(context, RouteNames.main, isReplaceName: true);
+    } else {
+      Fluttertoast.showToast(
+          msg: "Vui lòng kiểm tra số điện thoại và password");
+    }
   }
 
   @override
@@ -75,14 +139,14 @@ class _LoginPageState extends State<LoginPage> {
               AuthFormTextField(
                 label: 'Số điện thoại',
                 hint: 'Nhập số điện thoại',
-                controller: phoneNumber,
+                controller: phoneNumberController,
               ),
               const SizedBox(height: 10),
               AuthFormTextField(
                 label: 'Mật khẩu',
                 hint: 'Nhập mật khẩu',
-                obscureText: _isObscure,
-                controller: password,
+                obscureText: _isPasswordHidden,
+                controller: passwordController,
               ),
               // IconButton(
               //     onPressed: _togglePasswordVisibility,
@@ -132,39 +196,23 @@ class _LoginPageState extends State<LoginPage> {
               ),
               AuthActionButton(
                 text: 'Đăng nhập',
-                onPressed: () async {
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(builder: (context) => HomePage()),
-                  // );
-                  print(phoneNumber.text);
-                  print(password.text);
-
-                  // bool loginResult =
-                  await login(phoneNumber.text, password.text);
-                  // if (loginResult) {
-                  // navigatorHelper.changeView(
-                  //     context, customRouter.RouteNames.main,
-                  //     isReplaceName: true);
-
-                  // } else {
-
-                  // }
-                },
+                onPressed: onPressedLogin,
               ),
-              // AuthActionButton(
-              // text: 'Đăng nhập bằng Google',
-              // onPressed: () {
-              // // Xử lý BE
-              // },
-              // backgroundColor: const Color(0xFFEFEFEF),
-              // icon: Image.asset(
-              // 'assets/images/logo_google.png',
-              // height: 20,
-              // width: 20,
-              // ),
-              // textColor: Colors.black,
-              // ),
+
+              AuthActionButton(
+                text: 'Đăng nhập bằng Google',
+                onPressed: () {
+                  // Xử lý BE
+                },
+                backgroundColor: const Color(0xFFEFEFEF),
+                icon: Image.asset(
+                  'assets/images/logo_google.png',
+                  height: 20,
+                  width: 20,
+                ),
+                textColor: Colors.black,
+              ),
+
               const SizedBox(
                 height: 10,
               ),
@@ -182,39 +230,5 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
-  }
-
-  Future<void> login(String phoneNumber, String password) async {
-    try {
-      final response = await http.post(Uri.parse('$apiHost/api/auth/login'),
-          body: {'phone': phoneNumber, 'password': password});
-
-      if (response.statusCode == 200) {
-        final userJson = jsonDecode(response.body)["data"];
-        print(userJson.toString());
-        final user = UserModel.fromJson(userJson);
-        await localStorage.setUserInfo(user);
-
-        Fluttertoast.showToast(
-          msg: "Đăng nhập thành công",
-        );
-
-        if (user.status == 0) {
-          navigatorHelper
-              .changeView(context, RouteNames.otp, params: {"userId": user.id});
-        } else {
-          navigatorHelper.changeView(context, RouteNames.main,
-              isReplaceName: true);
-        }
-      } else {
-        Fluttertoast.showToast(
-          msg: jsonDecode(response.body)["message"],
-        );
-      }
-    } catch (e) {
-      print(e);
-      Fluttertoast.showToast(
-          msg: "Vui lòng kiểm tra số điện thoại và password");
-    }
   }
 }

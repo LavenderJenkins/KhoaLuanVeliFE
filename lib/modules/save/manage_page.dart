@@ -21,6 +21,7 @@ class _ManagePageState extends State<ManagePage> {
   LocalStorageService localStorage = LocalStorageService();
   List<DocumentModel> documents = [];
 
+
   Future<List<DocumentModel>> getDocuments() async {
     try {
       UserModel? user = await localStorage.getUserInfo();
@@ -33,11 +34,11 @@ class _ManagePageState extends State<ManagePage> {
         final List<DocumentModel> result = documentsJson
             .map((doc) => DocumentModel.fromJson(doc as Map<String, dynamic>))
             .toList();
-        if (mounted) {
-          setState(() {
-            documents = result;
-          });
-        }
+        // if (mounted) {
+        //   setState(() {
+        //     documents = result;
+        //   });
+        // }
         return result;
       }
       return [];
