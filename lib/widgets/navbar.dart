@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:veli_flutter/modules/account/pages/account_page.dart';
 import 'package:veli_flutter/modules/chat/pages/conversation_page.dart';
+import 'package:veli_flutter/modules/filter/pages/filter_page.dart';
+import 'package:veli_flutter/modules/post/pages/add_post_page.dart';
 import 'package:veli_flutter/modules/save/save_page.dart';
 import 'package:veli_flutter/pages/home_page.dart';
 import 'package:veli_flutter/widgets/nav_bar/nav_bar.dart';
@@ -70,8 +72,8 @@ class _MainPageState extends State<MainPage> {
           title: 'Home',
         ),
         BarItem(
-          icon: Icons.bookmark_added,
-          title: 'Lưu',
+          icon: Icons.shopping_cart_rounded,
+          title: 'Giỏ hàng',
         ),
         BarItem(
           icon: Icons.message,

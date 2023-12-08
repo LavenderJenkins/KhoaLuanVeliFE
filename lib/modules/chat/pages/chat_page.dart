@@ -198,10 +198,10 @@ class _ChatPageState extends State<ChatPage> {
                           height: 300,
                           width: 300,
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 80,
                         ),
-                        Text(
+                        const Text(
                           'Không có tin nhắn',
                           style: TextStyle(
                               fontSize: 20,
@@ -209,10 +209,10 @@ class _ChatPageState extends State<ChatPage> {
                               decoration: TextDecoration.none,
                               fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 20,
                         ),
-                        Text(
+                        const Text(
                           'Bạn không có tin nhắn mua bán nào ở đây',
                           style: TextStyle(
                               fontSize: 15,
@@ -223,7 +223,7 @@ class _ChatPageState extends State<ChatPage> {
                       ],
                     ),
                   )
-                : ListView.builder(
+                :  ListView.builder(
                     controller: _scrollController,
                     reverse: true, // đảo ngược thứ tự của danh sách
                     itemCount: messages.length,
