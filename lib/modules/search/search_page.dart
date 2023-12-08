@@ -125,7 +125,7 @@ class _SearchPageState extends State<SearchPage> {
                         height: 100,
                       ),
                       Text(
-                        'Không có tài liệu được lưu',
+                        'Không tìm thấy tài liệu nào',
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
@@ -134,7 +134,7 @@ class _SearchPageState extends State<SearchPage> {
                         height: 20,
                       ),
                       Text(
-                        'Bạn chưa lưu bất kỳ tài liệu nào. Nhấn biểu tượng lưu để lưu nhanh tài liệu mà bạn thích.',
+                        'Trống',
                         style: TextStyle(fontSize: 12),
                         textAlign: TextAlign.center,
                       ),
@@ -147,13 +147,13 @@ class _SearchPageState extends State<SearchPage> {
                       SizedBox(
                         height: 50,
                       ),
-                      AuthActionButton(
-                        text: 'TÌM TÀI LIỆU',
-                        onPressed: () {
-                          navigatorHelper.changeView(
-                              context, RouteNames.filter);
-                        },
-                      ),
+                      // AuthActionButton(
+                      //   text: 'TÌM TÀI LIỆU',
+                      //   onPressed: () {
+                      //     navigatorHelper.changeView(
+                      //         context, RouteNames.filter);
+                      //   },
+                      // ),
                     ],
                   ),
                 ),
@@ -170,10 +170,11 @@ class _SearchPageState extends State<SearchPage> {
                         return GestureDetector(
                             onTap: () {
                               navigatorHelper.changeView(
-                                  context, RouteNames.description,
-                                  params: {'documentId': data[index].id});
+                                  context, RouteNames.description, 
+                                  params: {'documentId' :data[index].id} );
                             },
-                            child: NewDocument(documentModel: data[index]));
+                            child: NewDocument(
+                                documentModel: data[index]));
                       },
                       childCount: data!.length,
                     ),
